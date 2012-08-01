@@ -26,7 +26,7 @@
 #define PB_B     (1<< 7)
 
 #define STABLE_ERROR  (4)
-#define STABLE_WAIT   (200)
+#define STABLE_WAIT   (300)
 
 static const PROGMEM unsigned char f_lock[] = {
 	0x0,0xe,0x11,0x15,0x11,0xe,0x0,0x0,
@@ -35,6 +35,11 @@ static const PROGMEM unsigned char f_lock[] = {
 	0x0,0xe,0x15,0x17,0x15,0xe,0x0,0x0,
 	0x0,0xe,0x15,0x1f,0x15,0xe,0x0,0x0,
 	0x0,0xe,0x1f,0x1b,0x1f,0xe,0x0,0x0
+};
+
+static const PROGMEM unsigned char f_ph[] = {
+	0x0,0x0,0x1e,0x1b,0x1b,0x1e,0x18,0x18,
+	0x1b,0x1b,0x1b,0x1f,0x1b,0x1b,0x1b,0x0
 };
 
 uint8_t task_pb_sample(void)
@@ -62,11 +67,15 @@ void lcd_load_char(void)
 	 * load userdefined characters from program memory
 	 * into LCD controller CG RAM location 0~5
 	 */
-	lcd_command(_BV(LCD_CGRAM));  /* set CG RAM start address 0 */
-
-	for(i = 0; i < sizeof(f_lock); i++) {
+	lcd_command(_BV(LCD_CGRAM) | (0));  /* set CG RAM start address 0 */
+	for (i = 0; i < sizeof(f_lock); i++) {
 		lcd_data(pgm_read_byte_near(&f_lock[i]));
 	}
+	lcd_command(_BV(LCD_CGRAM) | (6*8));  /* set CG RAM start address 0 */
+	for (i = 0; i < sizeof(f_ph); i++) {
+		lcd_data(pgm_read_byte_near(&f_ph[i]));
+	}
+	lcd_command(_BV(LCD_DDRAM));
 }
 
 int main(void)
@@ -88,8 +97,8 @@ int main(void)
 
 	// Initialize the LCD
 	lcd_init(LCD_DISP_ON);
-	lcd_load_char();
 	lcd_puts("Hello World!");
+	lcd_load_char();
 
 	// Start ADC sampling
 	adc_init();
@@ -119,10 +128,8 @@ int main(void)
 			centre_val = curr_val;
 		}
 
-
-
 		// Display pH
-		sprintf(lcd_string, "pH %5.2f   %5d",
+		sprintf(lcd_string, "\006\007 %5.2f   %5d",
 				(double) (curr_val - 2113) / ((2113 - 1474) / (7.0 - 4.0)) + 7.0,
 				centre_val);
 		lcd_gotoxy(0, 1);
