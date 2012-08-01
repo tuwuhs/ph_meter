@@ -10,9 +10,11 @@
 #include <stdlib.h>
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 
 #include "lcd.h"
+#include "adc.h"
 
 #define PB_LEFT  (1<< 2)
 #define PB_DOWN  (1<< 3)
@@ -21,9 +23,13 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
+extern uint32_t g_adc_ovs_avg;
+extern uint16_t g_adc_ovs_avg_val;
+
 int main(void)
 {
 	char lcd_string[20];
+	int16_t curr_val;
 
 	uint8_t led_state = 0;
 	uint8_t pb_pressed = 0;
@@ -38,6 +44,30 @@ int main(void)
 	// Initialize the LCD
 	lcd_init(LCD_DISP_ON);
 	lcd_puts("Hello World!");
+
+	// Start ADC sampling
+	adc_init();
+	adc_start(2);
+	sei();
+
+	while (1) {
+		/* EMA only */
+		curr_val = (int16_t) g_adc_ovs_avg_val;
+		sprintf(lcd_string, "%4u -  %5lu ", curr_val, g_adc_ovs_avg);
+		lcd_gotoxy(0, 0);
+		lcd_puts(lcd_string);
+
+//		sprintf(lcd_string, "pH %2.2f   ", (double) (curr_val - 537) / ((537.0 - 370.0) / (7.0 - 4.0)) + 7.0);
+//		lcd_gotoxy(0, 1);
+//		lcd_puts(lcd_string);
+
+		/* Oversampling then EMA */
+		// sprintf(lcd_string, "%4lu - %6lu", g_adc_ovs_avg_val, g_adc_ovs_avg);
+		// lcd_gotoxy(0, 1);
+		// lcd_puts(lcd_string);
+
+		_delay_ms(20);
+	}
 
 	while (1) {
 		// Sample pushbutton pin
