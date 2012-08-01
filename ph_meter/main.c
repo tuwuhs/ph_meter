@@ -24,7 +24,7 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
-#define STABLE_ERROR  (2)
+#define STABLE_ERROR  (4)
 #define STABLE_WAIT   (200)
 
 uint8_t task_pb_sample(void)
@@ -103,7 +103,7 @@ int main(void)
 
 		// Display pH
 		sprintf(lcd_string, "pH %2.2f    %5d",
-				(double) (curr_val - 2113) / ((2113.0 - 1474.0) / (7.0 - 4.0)) + 7.0,
+				(double) (curr_val - 2113) / ((2113 - 1474) / (7.0 - 4.0)) + 7.0,
 				centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
