@@ -63,10 +63,6 @@ int main(void)
 		lcd_gotoxy(0, 0);
 		lcd_puts(lcd_string);
 
-		sprintf(lcd_string, "%5d", centre_val);
-		lcd_gotoxy(0, 1);
-		lcd_puts(lcd_string);
-
 		// Stability indicator
 		if (abs(centre_val - curr_val) < STABLE_ERROR) {
 			if (stable_count > STABLE_WAIT) {
@@ -89,9 +85,11 @@ int main(void)
 			lcd_putc('-');
 		}
 
-//		sprintf(lcd_string, "pH %2.2f   ", (double) (curr_val - 537) / ((537.0 - 370.0) / (7.0 - 4.0)) + 7.0);
-//		lcd_gotoxy(0, 1);
-//		lcd_puts(lcd_string);
+		sprintf(lcd_string, "pH %2.2f    %5d",
+				(double) (curr_val - 2113) / ((2113.0 - 1474.0) / (7.0 - 4.0)) + 7.0,
+				centre_val);
+		lcd_gotoxy(0, 1);
+		lcd_puts(lcd_string);
 
 		_delay_ms(20);
 	}
