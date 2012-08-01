@@ -12,6 +12,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
 
 #include "lcd.h"
@@ -26,6 +27,15 @@
 
 #define STABLE_ERROR  (4)
 #define STABLE_WAIT   (200)
+
+static const PROGMEM unsigned char f_lock[] = {
+	0x0,0xe,0x11,0x15,0x11,0xe,0x0,0x0,
+	0x0,0xe,0x15,0x15,0x11,0xe,0x0,0x0,
+	0x0,0xe,0x15,0x17,0x11,0xe,0x0,0x0,
+	0x0,0xe,0x15,0x17,0x15,0xe,0x0,0x0,
+	0x0,0xe,0x15,0x1f,0x15,0xe,0x0,0x0,
+	0x0,0xe,0x1f,0x1b,0x1f,0xe,0x0,0x0
+};
 
 uint8_t task_pb_sample(void)
 {
@@ -43,6 +53,20 @@ uint8_t task_pb_sample(void)
 	pb_pressed = ~pb_pin;
 
 	return pb_flag;
+}
+
+void lcd_load_char(void)
+{
+	char i;
+	/*
+	 * load userdefined characters from program memory
+	 * into LCD controller CG RAM location 0~5
+	 */
+	lcd_command(_BV(LCD_CGRAM));  /* set CG RAM start address 0 */
+
+	for(i = 0; i < sizeof(f_lock); i++) {
+		lcd_data(pgm_read_byte_near(&f_lock[i]));
+	}
 }
 
 int main(void)
@@ -64,6 +88,7 @@ int main(void)
 
 	// Initialize the LCD
 	lcd_init(LCD_DISP_ON);
+	lcd_load_char();
 	lcd_puts("Hello World!");
 
 	// Start ADC sampling
@@ -94,35 +119,7 @@ int main(void)
 			centre_val = curr_val;
 		}
 
-		lcd_gotoxy(15, 0);
-		if (stable) {
-			lcd_putc('#');
-		} else {
-			switch (stable_count * 5 / STABLE_WAIT) {
-			case 0:
-				lcd_putc('1');
-				break;
-			case 1:
-				lcd_putc('2');
-				break;
-			case 2:
-				lcd_putc('3');
-				break;
-			case 3:
-				lcd_putc('4');
-				break;
-			case 4:
-				lcd_putc('5');
-				break;
-			default:
-				lcd_putc(' ');
-			}
-		}
-//		if (stable) {
-//			lcd_putc('#');
-//		} else {
-//			lcd_putc('^');
-//		}
+
 
 		// Display pH
 		sprintf(lcd_string, "pH %5.2f   %5d",
@@ -130,6 +127,33 @@ int main(void)
 				centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
+
+		// Display stability indicator
+		lcd_gotoxy(10, 1);
+		if (stable) {
+			lcd_putc(5);
+		} else {
+			switch (stable_count * 5 / STABLE_WAIT) {
+			case 0:
+				lcd_putc(0);
+				break;
+			case 1:
+				lcd_putc(1);
+				break;
+			case 2:
+				lcd_putc(2);
+				break;
+			case 3:
+				lcd_putc(3);
+				break;
+			case 4:
+				lcd_putc(4);
+				break;
+			default:
+				lcd_putc(' ');
+				break;
+			}
+		}
 
 		// Sample pushbutton
 		pb_event = task_pb_sample();
@@ -143,6 +167,8 @@ int main(void)
 		}
 		if (pb_event & PB_RIGHT) {
 			lcd_command(LCD_MOVE_DISP_RIGHT);
+		}
+		if (pb_event & PB_UP) {
 		}
 
 		// Update LED state
