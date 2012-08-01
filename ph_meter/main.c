@@ -27,6 +27,24 @@
 #define STABLE_ERROR  (2)
 #define STABLE_WAIT   (200)
 
+uint8_t task_pb_sample(void)
+{
+	static uint8_t pb_pressed = 0;
+	static uint8_t pb_pin = 0;
+	uint8_t pb_flag = 0;
+
+	// Sample pushbutton pin
+	pb_pin = PIND & 0xFC;
+
+	// Update pressed and released state
+	// Note: pb_flag is non-persistent,
+	//       the event is assumed to be handled right after the flag is set
+	pb_flag = pb_pressed & pb_pin;
+	pb_pressed = ~pb_pin;
+
+	return pb_flag;
+}
+
 int main(void)
 {
 	char lcd_string[20];
@@ -37,9 +55,7 @@ int main(void)
 	uint8_t stable = 0;
 
 	uint8_t led_state = 0;
-	uint8_t pb_pressed = 0;
 	uint8_t pb_flag = 0;
-	uint8_t pb_pin = 0;
 
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
@@ -92,14 +108,8 @@ int main(void)
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
 
-
-		// Sample pushbutton pin
-		pb_pin = PIND & 0xFC;
-
-		// Update pressed and released state
-		// Note: pb_flag must be cleared manually after the event is handled
-		pb_flag = pb_pressed & pb_pin;
-		pb_pressed = ~pb_pin;
+		// Sample pushbutton
+		pb_flag = task_pb_sample();
 
 		// Handle pushbutton events
 		if (pb_flag & PB_A) {
