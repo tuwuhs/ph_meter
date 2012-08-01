@@ -42,6 +42,8 @@ static const PROGMEM unsigned char f_ph[] = {
 	0x1b,0x1b,0x1b,0x1f,0x1b,0x1b,0x1b,0x0
 };
 
+double g_ph_const, g_ph_slope;
+
 uint8_t task_pb_sample(void)
 {
 	static uint8_t pb_pressed = 0;
@@ -78,6 +80,12 @@ void lcd_load_char(void)
 	lcd_command(_BV(LCD_DDRAM));
 }
 
+void ph_calibrate(void)
+{
+	g_ph_slope = ((4.0 - 7.0) / (1474 - 2113));
+	g_ph_const = (7.0 - 2113 * g_ph_slope);
+}
+
 int main(void)
 {
 	char lcd_string[20];
@@ -89,6 +97,8 @@ int main(void)
 
 	uint8_t led_state = 0;
 	uint8_t pb_event = 0;
+
+	double ph;
 
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
@@ -104,6 +114,9 @@ int main(void)
 	adc_init();
 	adc_start(2);
 	sei();
+
+	g_ph_slope = 0.0;
+	g_ph_const = 0.0;
 
 	while (1) {
 		curr_val = (int16_t) g_adc_val;
@@ -129,9 +142,10 @@ int main(void)
 		}
 
 		// Display pH
+//		ph = 7.0 + (curr_val - 2113) * (7.0 - 4.0) / (2113 - 1474);
+		ph = g_ph_const + g_ph_slope * curr_val;
 		sprintf(lcd_string, "\006\007 %5.2f   %5d",
-				(double) (curr_val - 2113) / ((2113 - 1474) / (7.0 - 4.0)) + 7.0,
-				centre_val);
+				ph, centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
 
@@ -164,6 +178,7 @@ int main(void)
 			lcd_command(LCD_MOVE_DISP_RIGHT);
 		}
 		if (pb_event & PB_UP) {
+			ph_calibrate();
 		}
 
 		// Update LED state
