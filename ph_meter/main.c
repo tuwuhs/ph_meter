@@ -27,7 +27,9 @@
 int main(void)
 {
 	char lcd_string[20];
-	int16_t curr_val;
+	int16_t curr_val = 0;
+	int16_t last_val = 0;
+	uint8_t stable_count = 0;
 
 	uint8_t led_state = 0;
 	uint8_t pb_pressed = 0;
@@ -49,9 +51,25 @@ int main(void)
 	sei();
 
 	while (1) {
-		/* EMA only */
+		last_val = curr_val;
 		curr_val = (int16_t) g_adc_val;
-		sprintf(lcd_string, "%4u -  %5lu ", curr_val, g_adc_avg);
+
+		if (((last_val - curr_val) > -5) &&
+			((last_val - curr_val) < 5)) {
+			if (stable_count > 100) {
+				sprintf(lcd_string, "Yeah  ");
+			} else {
+				stable_count++;
+				sprintf(lcd_string, "Unyeah");
+			}
+		} else {
+			stable_count = 0;
+			sprintf(lcd_string, "Unyeah");
+		}
+		lcd_gotoxy(0, 1);
+		lcd_puts(lcd_string);
+
+		sprintf(lcd_string, "%4u - %7lu", curr_val, g_adc_avg);
 		lcd_gotoxy(0, 0);
 		lcd_puts(lcd_string);
 
