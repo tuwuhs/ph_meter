@@ -38,7 +38,7 @@ int main(void)
 
 	uint8_t led_state = 0;
 	uint8_t pb_pressed = 0;
-	uint8_t pb_released = 0;
+	uint8_t pb_flag = 0;
 	uint8_t pb_pin = 0;
 
 	// Set PORTD for LEDs and pushbuttons
@@ -97,13 +97,13 @@ int main(void)
 		pb_pin = PIND & 0xFC;
 
 		// Update pressed and released state
-		// Note: b_released must be cleared manually after the event is handled
-		pb_released = pb_pressed & pb_pin;
+		// Note: pb_flag must be cleared manually after the event is handled
+		pb_flag = pb_pressed & pb_pin;
 		pb_pressed = ~pb_pin;
 
 		// Handle pushbutton events
-		if (pb_released & PB_A) {
-			pb_released &= ~PB_A;
+		if (pb_flag & PB_A) {
+			pb_flag &= ~PB_A;
 			led_state ^= 0xFF;
 		}
 
@@ -119,29 +119,29 @@ int main(void)
 
 	while (1) {
 
-		if (pb_released & PB_LEFT) {
-			pb_released &= ~PB_LEFT;
+		if (pb_flag & PB_LEFT) {
+			pb_flag &= ~PB_LEFT;
 			sprintf(lcd_string, "Left            ");
 			lcd_gotoxy(0, 0);
 			lcd_puts(lcd_string);
 		}
 
-		if (pb_released & PB_UP) {
-			pb_released &= ~PB_UP;
+		if (pb_flag & PB_UP) {
+			pb_flag &= ~PB_UP;
 			sprintf(lcd_string, "Up              ");
 			lcd_gotoxy(0, 0);
 			lcd_puts(lcd_string);
 		}
 
-		if (pb_released & PB_DOWN) {
-			pb_released &= ~PB_DOWN;
+		if (pb_flag & PB_DOWN) {
+			pb_flag &= ~PB_DOWN;
 			sprintf(lcd_string, "Down            ");
 			lcd_gotoxy(0, 0);
 			lcd_puts(lcd_string);
 		}
 
-		if (pb_released & PB_RIGHT) {
-			pb_released &= ~PB_RIGHT;
+		if (pb_flag & PB_RIGHT) {
+			pb_flag &= ~PB_RIGHT;
 			sprintf(lcd_string, "Right           ");
 			lcd_gotoxy(0, 0);
 			lcd_puts(lcd_string);
