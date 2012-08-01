@@ -11,6 +11,7 @@
 
 #include "adc.h"
 
+// These two variables are globally accessible by including adc.h
 uint32_t g_adc_avg = 0;
 uint16_t g_adc_val = 0;
 
@@ -31,7 +32,7 @@ ISR(ADC_vect)
 	samples = (samples + 1) % 16;
 
 	/* Use fixed-point arithmetic for Exponential Moving Average filter
-	 * Fixed-point arithmetic scaling factor: 2**5 (see macro EMA_SCALE)
+	 * Fixed-point arithmetic scaling factor: 2**10 (see macro EMA_SCALE)
 	 * Decay factor: 1:32 (see macros EMA_DECAY_NUM, EMA_DECAY_DENOM)
 	 *   Settling time (95%) is 3/alpha = 3/(1/32) = 96 samples
 	 *   With sampling rate ~488Hz, the settling time is therefore ~20ms
@@ -44,7 +45,7 @@ ISR(ADC_vect)
 	 * curr_value = oversampling_sum / 4
 	 * avg = (curr_value * NUM + avg * (DENOM - NUM)) / DENOM,
 	 *    round properly
-	 * avg_val: de-scale, and round properly
+	 * avg_val: de-scale and round properly
 	 */
 	if (samples == 0) {
 		g_adc_avg = ((  (((sum / 4) << EMA_SCALE) * EMA_DECAY_NUM) +

@@ -24,9 +24,6 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
-extern uint32_t g_adc_avg;
-extern uint16_t g_adc_val;
-
 int main(void)
 {
 	char lcd_string[20];

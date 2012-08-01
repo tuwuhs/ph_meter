@@ -14,6 +14,9 @@
 #define EMA_DECAY_NUM           (1)
 #define EMA_DECAY_DENOM         (32)
 
+extern uint32_t g_adc_avg;
+extern uint16_t g_adc_val;
+
 void adc_init(void);
 void adc_start(uint8_t ch);
 void adc_stop(void);
