@@ -24,17 +24,31 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
+#define STABLE_ERROR  (64)
+#define STABLE_WAIT   (300)
+
 int main(void)
 {
+	uint8_t i;
 	char lcd_string[20];
 	int16_t curr_val = 0;
-	int16_t last_val = 0;
-	uint8_t stable_count = 0;
+	int16_t last_val[64];
+	int32_t last_avg = 0;
+	int32_t last_sum = 0;
+	uint8_t last_index = 0;
+
+	uint16_t stable_count = 0;
+	uint8_t stable;
 
 	uint8_t led_state = 0;
 	uint8_t pb_pressed = 0;
 	uint8_t pb_released = 0;
 	uint8_t pb_pin = 0;
+
+	// Initialize variables
+	for (i = 0; i < 64; i++) {
+		last_val[i] = 0;
+	}
 
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
@@ -51,36 +65,46 @@ int main(void)
 	sei();
 
 	while (1) {
-		last_val = curr_val;
+//		last_val = curr_val;
 		curr_val = (int16_t) g_adc_val;
 
-		if (((last_val - curr_val) > -5) &&
-			((last_val - curr_val) < 5)) {
-			if (stable_count > 100) {
-				sprintf(lcd_string, "Yeah  ");
-			} else {
-				stable_count++;
-				sprintf(lcd_string, "Unyeah");
-			}
-		} else {
-			stable_count = 0;
-			sprintf(lcd_string, "Unyeah");
-		}
-		lcd_gotoxy(0, 1);
-		lcd_puts(lcd_string);
+		last_sum -= last_val[last_index];
+		last_val[last_index] = curr_val;
+		last_sum += last_val[last_index];
+		last_index = (last_index + 1) % 64;
 
+		// Print raw averaged value
 		sprintf(lcd_string, "%4u - %7lu", curr_val, g_adc_avg);
 		lcd_gotoxy(0, 0);
 		lcd_puts(lcd_string);
 
+		sprintf(lcd_string, "%ld %ld", last_sum, (int32_t) curr_val * 64);
+		lcd_gotoxy(0, 1);
+		lcd_puts(lcd_string);
+
+		// Stability indicator
+		if (((last_sum - ((int32_t) curr_val * 64)) > -STABLE_ERROR) &&
+			((last_sum - ((int32_t) curr_val * 64)) < STABLE_ERROR)) {
+			if (stable_count > STABLE_WAIT) {
+				stable = 1;
+			} else {
+				stable_count++;
+				stable = 0;
+			}
+		} else {
+			stable_count = 0;
+			stable = 0;
+		}
+		lcd_gotoxy(15, 0);
+		if (stable) {
+			lcd_putc('S');
+		} else {
+			lcd_putc('-');
+		}
+
 //		sprintf(lcd_string, "pH %2.2f   ", (double) (curr_val - 537) / ((537.0 - 370.0) / (7.0 - 4.0)) + 7.0);
 //		lcd_gotoxy(0, 1);
 //		lcd_puts(lcd_string);
-
-		/* Oversampling then EMA */
-		// sprintf(lcd_string, "%4lu - %6lu", g_adc_ovs_avg_val, g_adc_ovs_avg);
-		// lcd_gotoxy(0, 1);
-		// lcd_puts(lcd_string);
 
 		_delay_ms(20);
 	}
