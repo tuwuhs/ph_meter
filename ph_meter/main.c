@@ -55,7 +55,7 @@ int main(void)
 	uint8_t stable = 0;
 
 	uint8_t led_state = 0;
-	uint8_t pb_flag = 0;
+	uint8_t pb_event = 0;
 
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
@@ -96,25 +96,53 @@ int main(void)
 
 		lcd_gotoxy(15, 0);
 		if (stable) {
-			lcd_putc('S');
+			lcd_putc('#');
 		} else {
-			lcd_putc('-');
+			switch (stable_count * 5 / STABLE_WAIT) {
+			case 0:
+				lcd_putc('1');
+				break;
+			case 1:
+				lcd_putc('2');
+				break;
+			case 2:
+				lcd_putc('3');
+				break;
+			case 3:
+				lcd_putc('4');
+				break;
+			case 4:
+				lcd_putc('5');
+				break;
+			default:
+				lcd_putc(' ');
+			}
 		}
+//		if (stable) {
+//			lcd_putc('#');
+//		} else {
+//			lcd_putc('^');
+//		}
 
 		// Display pH
-		sprintf(lcd_string, "pH %2.2f    %5d",
+		sprintf(lcd_string, "pH %5.2f   %5d",
 				(double) (curr_val - 2113) / ((2113 - 1474) / (7.0 - 4.0)) + 7.0,
 				centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
 
 		// Sample pushbutton
-		pb_flag = task_pb_sample();
+		pb_event = task_pb_sample();
 
 		// Handle pushbutton events
-		if (pb_flag & PB_A) {
-			pb_flag &= ~PB_A;
+		if (pb_event & PB_A) {
 			led_state ^= 0xFF;
+		}
+		if (pb_event & PB_LEFT) {
+			lcd_command(LCD_MOVE_DISP_LEFT);
+		}
+		if (pb_event & PB_RIGHT) {
+			lcd_command(LCD_MOVE_DISP_RIGHT);
 		}
 
 		// Update LED state
@@ -125,39 +153,6 @@ int main(void)
 		}
 
 		_delay_ms(20);
-	}
-
-	while (1) {
-
-		if (pb_flag & PB_LEFT) {
-			pb_flag &= ~PB_LEFT;
-			sprintf(lcd_string, "Left            ");
-			lcd_gotoxy(0, 0);
-			lcd_puts(lcd_string);
-		}
-
-		if (pb_flag & PB_UP) {
-			pb_flag &= ~PB_UP;
-			sprintf(lcd_string, "Up              ");
-			lcd_gotoxy(0, 0);
-			lcd_puts(lcd_string);
-		}
-
-		if (pb_flag & PB_DOWN) {
-			pb_flag &= ~PB_DOWN;
-			sprintf(lcd_string, "Down            ");
-			lcd_gotoxy(0, 0);
-			lcd_puts(lcd_string);
-		}
-
-		if (pb_flag & PB_RIGHT) {
-			pb_flag &= ~PB_RIGHT;
-			sprintf(lcd_string, "Right           ");
-			lcd_gotoxy(0, 0);
-			lcd_puts(lcd_string);
-		}
-
-
 	}
 
 	return 0;
