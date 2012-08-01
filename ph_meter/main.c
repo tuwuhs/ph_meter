@@ -85,16 +85,14 @@ int main(void)
 			lcd_putc('-');
 		}
 
+		// Display pH
 		sprintf(lcd_string, "pH %2.2f    %5d",
 				(double) (curr_val - 2113) / ((2113.0 - 1474.0) / (7.0 - 4.0)) + 7.0,
 				centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
 
-		_delay_ms(20);
-	}
 
-	while (1) {
 		// Sample pushbutton pin
 		pb_pin = PIND & 0xFC;
 
@@ -108,6 +106,18 @@ int main(void)
 			pb_released &= ~PB_A;
 			led_state ^= 0xFF;
 		}
+
+		// Update LED state
+		if (led_state) {
+			PORTD |= (1<< 0);
+		} else {
+			PORTD &= ~(1<< 0);
+		}
+
+		_delay_ms(20);
+	}
+
+	while (1) {
 
 		if (pb_released & PB_LEFT) {
 			pb_released &= ~PB_LEFT;
@@ -138,11 +148,6 @@ int main(void)
 		}
 
 
-		if (led_state) {
-			PORTD |= (1<< 0);
-		} else {
-			PORTD &= ~(1<< 0);
-		}
 	}
 
 	return 0;
