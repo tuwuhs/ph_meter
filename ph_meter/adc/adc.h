@@ -3,10 +3,16 @@
  *
  *  Created on: Aug 1, 2012
  *      Author: tuwuhs
+ *      (c) 2012 Tuwuh Sarwoprasojo
  */
 
 #ifndef ADC_H_
 #define ADC_H_
+
+/* Exponential Moving Average filter parameters */
+#define EMA_SCALE               (10)
+#define EMA_DECAY_NUM           (1)
+#define EMA_DECAY_DENOM         (32)
 
 void adc_init(void);
 void adc_start(uint8_t ch);

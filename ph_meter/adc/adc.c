@@ -3,42 +3,34 @@
  *
  *  Created on: Aug 1, 2012
  *      Author: tuwuhs
+ *      (c) 2012 Tuwuh Sarwoprasojo
  */
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-/* Exponential Moving Average filter parameters */
-#define EMA_SCALE               (10)
-#define EMA_DECAY_NUM           (1)
-#define EMA_DECAY_DENOM         (32)
+#include "adc.h"
 
-uint16_t g_adc_ovs_array[16];
-uint32_t g_adc_ovs_sum = 0;
-uint32_t g_adc_ovs_val = 0;
-uint8_t g_adc_ovs_array_index = 0;
-
-uint32_t g_adc_ovs_avg = 0;
-uint32_t g_adc_ovs_avg_val = 0;
+uint32_t g_adc_avg = 0;
+uint16_t g_adc_val = 0;
 
 ISR(ADC_vect)
 {
-	uint16_t adc_val;
-
-	/* Get ADC result */
-	adc_val = ADC;
+	static uint32_t sum = 0;
+	static uint8_t samples = 0;
 
 	/* Clear Timer/Counter0 Overflow flag */
 	TIFR |= (1<< OCF0);
 
-	/* Use oversampling to get a 12-bit result
+	/* Get ADC result
+	 * Use oversampling to get a 12-bit result
 	 * 2 additional bits --> 16 samples needed
 	 * Sample rate after oversampling: 7812.5 / 16 = 488.2 Hz
 	 */
-	g_adc_ovs_sum += adc_val;
-	g_adc_ovs_array_index = (g_adc_ovs_array_index + 1) % 16;
+	sum += ADC;
+	samples = (samples + 1) % 16;
 
-	/* Use fixed-point Exponential Moving Average filter
+	/* Use fixed-point arithmetic for Exponential Moving Average filter
 	 * Fixed-point arithmetic scaling factor: 2**5 (see macro EMA_SCALE)
 	 * Decay factor: 1:32 (see macros EMA_DECAY_NUM, EMA_DECAY_DENOM)
 	 *   Settling time (95%) is 3/alpha = 3/(1/32) = 96 samples
@@ -46,14 +38,20 @@ ISR(ADC_vect)
 	 *
 	 * Apply EMA to the oversampled result
 	 * Update only when the samples have accumulated
+	 *
+	 * Algorithm:
+	 * Decay factor defined as NUM / DENOM
+	 * curr_value = oversampling_sum / 4
+	 * avg = (curr_value * NUM + avg * (DENOM - NUM)) / DENOM,
+	 *    round properly
+	 * avg_val: de-scale, and round properly
 	 */
-	if (g_adc_ovs_array_index == 0) {
-		g_adc_ovs_val = g_adc_ovs_sum / 4;
-		g_adc_ovs_sum = 0;
-		g_adc_ovs_avg = ((  ((g_adc_ovs_val << EMA_SCALE) *  EMA_DECAY_NUM) +
-				(               g_adc_ovs_avg * (EMA_DECAY_DENOM - EMA_DECAY_NUM))
-		) + (EMA_DECAY_DENOM / 2)) / EMA_DECAY_DENOM;
-		g_adc_ovs_avg_val = (g_adc_ovs_avg + ((1 << EMA_SCALE) / 2)) >> EMA_SCALE;
+	if (samples == 0) {
+		g_adc_avg = ((  (((sum / 4) << EMA_SCALE) * EMA_DECAY_NUM) +
+		                 (              g_adc_avg * (EMA_DECAY_DENOM - EMA_DECAY_NUM)))
+		            + (EMA_DECAY_DENOM / 2)) / EMA_DECAY_DENOM;
+		g_adc_val = (g_adc_avg + ((1 << EMA_SCALE) / 2)) >> EMA_SCALE;
+		sum = 0;
 	}
 }
 

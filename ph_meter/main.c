@@ -3,6 +3,7 @@
  *
  *  Created on: Aug 1, 2012
  *      Author: tuwuhs
+ *      (c) 2012 Tuwuh Sarwoprasojo
  */
 
 #include <stdint.h>
@@ -23,8 +24,8 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
-extern uint32_t g_adc_ovs_avg;
-extern uint16_t g_adc_ovs_avg_val;
+extern uint32_t g_adc_avg;
+extern uint16_t g_adc_val;
 
 int main(void)
 {
@@ -52,8 +53,8 @@ int main(void)
 
 	while (1) {
 		/* EMA only */
-		curr_val = (int16_t) g_adc_ovs_avg_val;
-		sprintf(lcd_string, "%4u -  %5lu ", curr_val, g_adc_ovs_avg);
+		curr_val = (int16_t) g_adc_val;
+		sprintf(lcd_string, "%4u -  %5lu ", curr_val, g_adc_avg);
 		lcd_gotoxy(0, 0);
 		lcd_puts(lcd_string);
 
