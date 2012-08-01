@@ -24,18 +24,19 @@
 #define PB_A     (1<< 6)
 #define PB_B     (1<< 7)
 
-#define STABLE_ERROR  (64)
-#define STABLE_WAIT   (300)
+#define STABLE_ERROR  (2)
+#define STABLE_WAIT   (100)
 
 int main(void)
 {
 	uint8_t i;
 	char lcd_string[20];
 	int16_t curr_val = 0;
-	int16_t last_val[64];
-	int32_t last_avg = 0;
-	int32_t last_sum = 0;
-	uint8_t last_index = 0;
+	int16_t centre_val = 0;
+//	int16_t last_val[64];
+//	int32_t last_avg = 0;
+//	int32_t last_sum = 0;
+//	uint8_t last_index = 0;
 
 	uint16_t stable_count = 0;
 	uint8_t stable;
@@ -46,9 +47,9 @@ int main(void)
 	uint8_t pb_pin = 0;
 
 	// Initialize variables
-	for (i = 0; i < 64; i++) {
-		last_val[i] = 0;
-	}
+//	for (i = 0; i < 64; i++) {
+//		last_val[i] = 0;
+//	}
 
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
@@ -65,36 +66,49 @@ int main(void)
 	sei();
 
 	while (1) {
-//		last_val = curr_val;
+//		centre_val = curr_val;
 		curr_val = (int16_t) g_adc_val;
 
-		last_sum -= last_val[last_index];
-		last_val[last_index] = curr_val;
-		last_sum += last_val[last_index];
-		last_index = (last_index + 1) % 64;
+//		last_sum -= last_val[last_index];
+//		last_val[last_index] = curr_val;
+//		last_sum += last_val[last_index];
+//		last_index = (last_index + 1) % 64;
 
 		// Print raw averaged value
 		sprintf(lcd_string, "%4u - %7lu", curr_val, g_adc_avg);
 		lcd_gotoxy(0, 0);
 		lcd_puts(lcd_string);
 
-		sprintf(lcd_string, "%ld %ld", last_sum, (int32_t) curr_val * 64);
+		sprintf(lcd_string, "%5d", centre_val);
 		lcd_gotoxy(0, 1);
 		lcd_puts(lcd_string);
 
 		// Stability indicator
-		if (((last_sum - ((int32_t) curr_val * 64)) > -STABLE_ERROR) &&
-			((last_sum - ((int32_t) curr_val * 64)) < STABLE_ERROR)) {
+		if (abs(centre_val - curr_val) < STABLE_ERROR) {
 			if (stable_count > STABLE_WAIT) {
 				stable = 1;
 			} else {
-				stable_count++;
 				stable = 0;
+				stable_count++;
 			}
 		} else {
-			stable_count = 0;
 			stable = 0;
+			stable_count = 0;
+			centre_val = curr_val;
 		}
+
+//		if (((last_sum - ((int32_t) curr_val * 64)) > -STABLE_ERROR) &&
+//			((last_sum - ((int32_t) curr_val * 64)) < STABLE_ERROR)) {
+//			if (stable_count > STABLE_WAIT) {
+//				stable = 1;
+//			} else {
+//				stable_count++;
+//				stable = 0;
+//			}
+//		} else {
+//			stable_count = 0;
+//			stable = 0;
+//		}
 		lcd_gotoxy(15, 0);
 		if (stable) {
 			lcd_putc('S');
