@@ -13,9 +13,6 @@
 #define EMA_DECAY_NUM           (1)
 #define EMA_DECAY_DENOM         (32)
 
-uint32_t g_adc_avg = 0;
-uint16_t g_adc_avg_val = 0;
-
 uint16_t g_adc_ovs_array[16];
 uint32_t g_adc_ovs_sum = 0;
 uint32_t g_adc_ovs_val = 0;
@@ -38,9 +35,7 @@ ISR(ADC_vect)
 	 * 2 additional bits --> 16 samples needed
 	 * Sample rate after oversampling: 7812.5 / 16 = 488.2 Hz
 	 */
-	g_adc_ovs_sum -= g_adc_ovs_array[g_adc_ovs_array_index];
-	g_adc_ovs_array[g_adc_ovs_array_index] = adc_val;
-	g_adc_ovs_sum += g_adc_ovs_array[g_adc_ovs_array_index];
+	g_adc_ovs_sum += adc_val;
 	g_adc_ovs_array_index = (g_adc_ovs_array_index + 1) % 16;
 
 	/* Use fixed-point Exponential Moving Average filter
@@ -54,6 +49,7 @@ ISR(ADC_vect)
 	 */
 	if (g_adc_ovs_array_index == 0) {
 		g_adc_ovs_val = g_adc_ovs_sum / 4;
+		g_adc_ovs_sum = 0;
 		g_adc_ovs_avg = ((  ((g_adc_ovs_val << EMA_SCALE) *  EMA_DECAY_NUM) +
 				(               g_adc_ovs_avg * (EMA_DECAY_DENOM - EMA_DECAY_NUM))
 		) + (EMA_DECAY_DENOM / 2)) / EMA_DECAY_DENOM;
