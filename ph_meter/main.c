@@ -34,7 +34,7 @@ static const PROGMEM unsigned char f_lock[] = {
 	0x0,0xe,0x15,0x17,0x11,0xe,0x0,0x0,
 	0x0,0xe,0x15,0x17,0x15,0xe,0x0,0x0,
 	0x0,0xe,0x15,0x1f,0x15,0xe,0x0,0x0,
-	0x0,0xe,0x1f,0x1b,0x1f,0xe,0x0,0x0
+	0x0,0x1,0x3,0x16,0x1c,0x8,0x0,0x0
 };
 
 static const PROGMEM unsigned char f_ph[] = {
@@ -62,7 +62,7 @@ uint8_t task_pb_sample(void)
 
 void lcd_load_char(void)
 {
-	char i;
+	uint8_t i;
 	/*
 	 * load userdefined characters from program memory
 	 * into LCD controller CG RAM location 0~5
@@ -140,25 +140,13 @@ int main(void)
 		if (stable) {
 			lcd_putc(5);
 		} else {
-			switch (stable_count * 5 / STABLE_WAIT) {
-			case 0:
-				lcd_putc(0);
-				break;
-			case 1:
-				lcd_putc(1);
-				break;
-			case 2:
-				lcd_putc(2);
-				break;
-			case 3:
-				lcd_putc(3);
-				break;
-			case 4:
-				lcd_putc(4);
-				break;
-			default:
-				lcd_putc(' ');
-				break;
+			switch (stable_count / (STABLE_WAIT / 5)) {
+				case 0: lcd_putc(0); break;
+				case 1:	lcd_putc(1); break;
+				case 2:	lcd_putc(2); break;
+				case 3:	lcd_putc(3); break;
+				case 4:	lcd_putc(4); break;
+				default: lcd_putc(' ');	break;
 			}
 		}
 
