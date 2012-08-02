@@ -294,7 +294,7 @@ int main(void)
 			break;
 		}
 
-		_delay_ms(30);
+		_delay_ms(20);
 	}
 
 	return 0;
