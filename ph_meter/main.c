@@ -147,7 +147,7 @@ void ui_ph_calibrate(void)
 	lcd_gotoxy(0, 0);
 	switch (state) {
 	case PH7_START:
-		lcd_puts("Probe pH 7.0!   ");
+		lcd_puts("Probe pH 7.0?   ");
 		g_stable_count = 0;
 		g_stable = 0;
 		if (g_pb_flag & PB_A) state = PH7_PROBE;
@@ -161,7 +161,7 @@ void ui_ph_calibrate(void)
 		state = PH4_START;
 		break;
 	case PH4_START:
-		lcd_puts("Probe pH 4.0!   ");
+		lcd_puts("Probe pH 4.0?   ");
 		g_stable_count = 0;
 		g_stable = 0;
 		if (g_pb_flag & PB_A) state = PH4_PROBE;
@@ -188,6 +188,8 @@ void ui_ph_calibrate(void)
 	case SAVE_CAL:
 		g_ph_const = ph_const;
 		g_ph_slope = ph_slope;
+		lcd_clrscr();
+		state = PH7_START;
 		g_operating_mode = MODE_NORMAL;
 		break;
 	}
@@ -224,12 +226,15 @@ void ui_normal(void)
 			default: lcd_putc(' ');	break;
 		}
 	}
+
+	// OK button for calibration
+	if (g_pb_flag & PB_A) {
+		g_operating_mode = MODE_CALIBRATE;
+	}
 }
 
 int main(void)
 {
-	uint8_t led_state = 0;
-
 	// Set PORTD for LEDs and pushbuttons
 	// Turn-off LEDs, enable pull-up
 	DDRD = (1<< 0) | (1<< 1);
@@ -287,30 +292,6 @@ int main(void)
 		default:
 			g_operating_mode = MODE_NORMAL;
 			break;
-		}
-
-		// Handle pushbutton events
-		if (g_pb_flag & PB_A) {
-			led_state ^= 0xFF;
-		}
-		if (g_pb_flag & PB_LEFT) {
-			lcd_command(LCD_MOVE_DISP_LEFT);
-		}
-		if (g_pb_flag & PB_RIGHT) {
-			lcd_command(LCD_MOVE_DISP_RIGHT);
-		}
-		if (g_pb_flag & PB_UP) {
-			g_operating_mode = MODE_CALIBRATE;
-		}
-		if (g_pb_flag & PB_DOWN) {
-			g_operating_mode = MODE_NORMAL;
-		}
-
-		// Update LED state
-		if (led_state) {
-			PORTD |= (1<< 0);
-		} else {
-			PORTD &= ~(1<< 0);
 		}
 
 		_delay_ms(20);
